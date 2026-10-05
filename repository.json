@@ -1,58 +1,95 @@
-{
-  "schemaVersion": 1,
-  "repositoryId": "francis-donghua-modules",
-  "name": "Francis Donghua Modules",
-  "enabled": true,
-  "modules": [
-    {
-      "moduleId": "donghua-stream",
-      "moduleFamilyId": "donghua-stream",
-      "contentType": "video",
-      "version": "1.0.0",
-      "minAppVersion": "8.0.0",
-      "sourceUrl": "https://donghuastream.org/",
-      "presentation": {
-        "category": "Donghua",
-        "purpose": "Donghua, Sci-Fi and Fantasy",
-        "recommended": true,
-        "language": "English",
-        "languages": [
-          "sub",
-          "dub"
-        ],
-        "genres": [
-          "Donghua",
-          "Sci-Fi",
-          "Fantasy"
-        ]
+/**
+ * Extract playback stream URL for DonghuaStream episode pages
+ * @param {string} episodeUrl - Full URL to the episode page
+ * @returns {Promise<{url: string, type: 'hls'|'mp4'|'embed'}>}
+ */
+async function extractStreamUrl(episodeUrl) {
+  // 1. Fetch episode page HTML from DonghuaStream
+  const response = await fetch(episodeUrl, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Referer': 'https://donghuastream.org/'
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load episode page. HTTP status: ${response.status}`);
+  }
+
+  const html = await response.text();
+
+  // 2. Check for direct MP4 / HLS streams embedded directly in page source
+  const directMediaMatch = html.match(/(https?:\/\/[^\s"'<>]+\.(?:m3u8|mp4)(?:\?[^\s"'<>]*)?)/i);
+  if (directMediaMatch) {
+    return {
+      url: directMediaMatch[1],
+      type: directMediaMatch[1].includes('.m3u8') ? 'hls' : 'mp4'
+    };
+  }
+
+  // 3. Extract Dailymotion Video ID from iframe embeds or page links
+  let videoId = null;
+
+  const geoMatch = html.match(/geo\.dailymotion\.com\/player\/[^"'\s]+\.html\?video=([a-zA-Z0-9]+)/i);
+  const embedMatch = html.match(/dailymotion\.com\/(?:embed\/video|player)\/([a-zA-Z0-9]+)/i);
+  const rawIdMatch = html.match(/donghuastream\.org\/([a-zA-Z0-9]{15,25})/i);
+
+  if (geoMatch) {
+    videoId = geoMatch[1];
+  } else if (embedMatch) {
+    videoId = embedMatch[1];
+  } else if (rawIdMatch) {
+    videoId = rawIdMatch[1];
+  }
+
+  // 4. Resolve HLS stream URL via Dailymotion metadata player API
+  if (videoId) {
+    const metadataUrl = `https://www.dailymotion.com/player/metadata/video/${videoId}`;
+    const metaResponse = await fetch(metadataUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        'Referer': 'https://www.dailymotion.com/'
+      }
+    });
+
+    if (metaResponse.ok) {
+      const metadata = await metaResponse.json();
+
+      // Retrieve auto-bitrate HLS (.m3u8) stream from metadata qualities
+      if (metadata.qualities) {
+        const autoStreams = metadata.qualities.auto || [];
+        for (const stream of autoStreams) {
+          if (stream.url) {
+            return {
+              url: stream.url,
+              type: 'hls'
+            };
+          }
+        }
+
+        // Fallback to highest available static quality resolution
+        for (const qualityKey of Object.keys(metadata.qualities)) {
+          const streamList = metadata.qualities[qualityKey];
+          if (Array.isArray(streamList) && streamList.length > 0 && streamList[0].url) {
+            return {
+              url: streamList[0].url,
+              type: streamList[0].url.includes('.m3u8') ? 'hls' : 'mp4'
+            };
+          }
+        }
       }
     }
-  ],
-  "categories": [
-    {
-      "id": "donghua",
-      "name": "Donghua",
-      "sourceUrl": "https://donghuastream.org/anime/"
-    },
-    {
-      "id": "scifi",
-      "name": "Sci-Fi",
-      "sourceUrl": "https://donghuastream.org/anime/"
-    },
-    {
-      "id": "fantasy",
-      "name": "Fantasy",
-      "sourceUrl": "https://donghuastream.org/anime/"
-    },
-    {
-      "id": "sub",
-      "name": "English Sub",
-      "sourceUrl": "https://donghuastream.org/anime/"
-    },
-    {
-      "id": "dub",
-      "name": "English Dub",
-      "sourceUrl": "https://donghuastream.org/anime/"
-    }
-  ]
+  }
+
+  // 5. Fallback: Generic iframe URL for WebView playback
+  const iframeMatch = html.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+  if (iframeMatch) {
+    const embedUrl = iframeMatch[1];
+    return {
+      url: embedUrl.startsWith('//') ? `https:${embedUrl}` : embedUrl,
+      type: 'embed'
+    };
+  }
+
+  throw new Error('DonghuaStream page has no direct MP4/HLS or extractable embed source.');
 }
