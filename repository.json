@@ -1,95 +1,457 @@
-/**
- * Extract playback stream URL for DonghuaStream episode pages
- * @param {string} episodeUrl - Full URL to the episode page
- * @returns {Promise<{url: string, type: 'hls'|'mp4'|'embed'}>}
- */
-async function extractStreamUrl(episodeUrl) {
-  // 1. Fetch episode page HTML from DonghuaStream
-  const response = await fetch(episodeUrl, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Referer': 'https://donghuastream.org/'
-    }
-  });
+{
+  "schemaVersion": 1,
+  "repositoryId": "francis-media-modules",
+  "name": "Francis Media Modules",
+  "enabled": true,
+  "publishedAtMs": 0,
 
-  if (!response.ok) {
-    throw new Error(`Failed to load episode page. HTTP status: ${response.status}`);
-  }
+  "presentation": {
+    "name": "Francis Media",
+    "description": "Donghua, Chinese cinema, fantasy, science fiction, international movies, music and artwork.",
+    "category": "Movies & TV",
+    "language": "Multilingual",
+    "languages": [
+      "Chinese",
+      "English",
+      "Japanese",
+      "Korean",
+      "French",
+      "Spanish"
+    ]
+  },
 
-  const html = await response.text();
+  "modules": [
 
-  // 2. Check for direct MP4 / HLS streams embedded directly in page source
-  const directMediaMatch = html.match(/(https?:\/\/[^\s"'<>]+\.(?:m3u8|mp4)(?:\?[^\s"'<>]*)?)/i);
-  if (directMediaMatch) {
-    return {
-      url: directMediaMatch[1],
-      type: directMediaMatch[1].includes('.m3u8') ? 'hls' : 'mp4'
-    };
-  }
+    {
+      "moduleId": "donghua-stream-v1",
+      "moduleFamilyId": "donghua_stream_v1",
+      "moduleIdentity": "SP-VID-201-DONGHUA",
+      "moduleIdentityNumber": 201,
+      "contentType": "video",
+      "version": "1.0.0",
+      "minAppVersion": "8.0.0",
 
-  // 3. Extract Dailymotion Video ID from iframe embeds or page links
-  let videoId = null;
+      "sourceUrl": "https://donghuastream.org/",
 
-  const geoMatch = html.match(/geo\.dailymotion\.com\/player\/[^"'\s]+\.html\?video=([a-zA-Z0-9]+)/i);
-  const embedMatch = html.match(/dailymotion\.com\/(?:embed\/video|player)\/([a-zA-Z0-9]+)/i);
-  const rawIdMatch = html.match(/donghuastream\.org\/([a-zA-Z0-9]{15,25})/i);
-
-  if (geoMatch) {
-    videoId = geoMatch[1];
-  } else if (embedMatch) {
-    videoId = embedMatch[1];
-  } else if (rawIdMatch) {
-    videoId = rawIdMatch[1];
-  }
-
-  // 4. Resolve HLS stream URL via Dailymotion metadata player API
-  if (videoId) {
-    const metadataUrl = `https://www.dailymotion.com/player/metadata/video/${videoId}`;
-    const metaResponse = await fetch(metadataUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        'Referer': 'https://www.dailymotion.com/'
+      "presentation": {
+        "category": "Donghua",
+        "purpose": "Chinese Animation / Donghua",
+        "recommended": true,
+        "language": "Chinese / English Sub",
+        "languages": [
+          "zh",
+          "sub"
+        ],
+        "genres": [
+          "Donghua",
+          "Action",
+          "Adventure",
+          "Fantasy",
+          "Cultivation",
+          "Martial Arts",
+          "Romance",
+          "Sci-Fi"
+        ]
       }
-    });
+    },
 
-    if (metaResponse.ok) {
-      const metadata = await metaResponse.json();
+    {
+      "moduleId": "chinese-movies-v1",
+      "moduleFamilyId": "chinese_movies_v1",
+      "moduleIdentity": "SP-VID-202-CHINESE-MOVIES",
+      "moduleIdentityNumber": 202,
+      "contentType": "video",
+      "version": "1.0.0",
+      "minAppVersion": "8.0.0",
 
-      // Retrieve auto-bitrate HLS (.m3u8) stream from metadata qualities
-      if (metadata.qualities) {
-        const autoStreams = metadata.qualities.auto || [];
-        for (const stream of autoStreams) {
-          if (stream.url) {
-            return {
-              url: stream.url,
-              type: 'hls'
-            };
-          }
-        }
+      "presentation": {
+        "category": "Chinese Movies",
+        "purpose": "Chinese Movies and Cinema",
+        "recommended": true,
+        "language": "Chinese / Subtitles",
+        "languages": [
+          "zh",
+          "sub",
+          "dub"
+        ],
+        "genres": [
+          "Action",
+          "Adventure",
+          "Comedy",
+          "Drama",
+          "Fantasy",
+          "Historical",
+          "Romance",
+          "Sci-Fi",
+          "Thriller"
+        ]
+      }
+    },
 
-        // Fallback to highest available static quality resolution
-        for (const qualityKey of Object.keys(metadata.qualities)) {
-          const streamList = metadata.qualities[qualityKey];
-          if (Array.isArray(streamList) && streamList.length > 0 && streamList[0].url) {
-            return {
-              url: streamList[0].url,
-              type: streamList[0].url.includes('.m3u8') ? 'hls' : 'mp4'
-            };
-          }
-        }
+    {
+      "moduleId": "chinese-series-v1",
+      "moduleFamilyId": "chinese_series_v1",
+      "moduleIdentity": "SP-VID-203-CHINESE-SERIES",
+      "moduleIdentityNumber": 203,
+      "contentType": "video",
+      "version": "1.0.0",
+      "minAppVersion": "8.0.0",
+
+      "presentation": {
+        "category": "Chinese Series",
+        "purpose": "Chinese TV Series and Drama",
+        "recommended": true,
+        "language": "Chinese / Subtitles",
+        "languages": [
+          "zh",
+          "sub",
+          "dub"
+        ],
+        "genres": [
+          "Drama",
+          "Historical",
+          "Wuxia",
+          "Xianxia",
+          "Romance",
+          "Fantasy",
+          "Action",
+          "Mystery",
+          "Sci-Fi"
+        ]
+      }
+    },
+
+    {
+      "moduleId": "fantasy-world-v1",
+      "moduleFamilyId": "fantasy_world_v1",
+      "moduleIdentity": "SP-VID-204-FANTASY",
+      "moduleIdentityNumber": 204,
+      "contentType": "video",
+      "version": "1.0.0",
+      "minAppVersion": "8.0.0",
+
+      "presentation": {
+        "category": "Fantasy",
+        "purpose": "Fantasy Movies and Series",
+        "recommended": true,
+        "language": "Multilingual",
+        "languages": [
+          "en",
+          "zh",
+          "ja",
+          "ko",
+          "sub",
+          "dub"
+        ],
+        "genres": [
+          "Fantasy",
+          "Dark Fantasy",
+          "High Fantasy",
+          "Urban Fantasy",
+          "Magic",
+          "Mythology",
+          "Supernatural",
+          "Adventure"
+        ]
+      }
+    },
+
+    {
+      "moduleId": "scifi-world-v1",
+      "moduleFamilyId": "scifi_world_v1",
+      "moduleIdentity": "SP-VID-205-SCIFI",
+      "moduleIdentityNumber": 205,
+      "contentType": "video",
+      "version": "1.0.0",
+      "minAppVersion": "8.0.0",
+
+      "presentation": {
+        "category": "Sci-Fi",
+        "purpose": "Science Fiction Movies and Series",
+        "recommended": true,
+        "language": "Multilingual",
+        "languages": [
+          "en",
+          "zh",
+          "ja",
+          "ko",
+          "sub",
+          "dub"
+        ],
+        "genres": [
+          "Sci-Fi",
+          "Space",
+          "Cyberpunk",
+          "Time Travel",
+          "Robotics",
+          "AI",
+          "Post-Apocalyptic",
+          "Alien",
+          "Mecha"
+        ]
+      }
+    },
+
+    {
+      "moduleId": "world-movies-v1",
+      "moduleFamilyId": "world_movies_v1",
+      "moduleIdentity": "SP-VID-206-WORLD-MOVIES",
+      "moduleIdentityNumber": 206,
+      "contentType": "video",
+      "version": "1.0.0",
+      "minAppVersion": "8.0.0",
+
+      "presentation": {
+        "category": "World Movies",
+        "purpose": "International Movies",
+        "recommended": false,
+        "language": "Multilingual",
+        "languages": [
+          "en",
+          "zh",
+          "ja",
+          "ko",
+          "fr",
+          "es",
+          "sub",
+          "dub"
+        ],
+        "genres": [
+          "Action",
+          "Adventure",
+          "Comedy",
+          "Drama",
+          "Fantasy",
+          "Horror",
+          "Mystery",
+          "Romance",
+          "Sci-Fi",
+          "Thriller"
+        ]
+      }
+    },
+
+    {
+      "moduleId": "music-v1",
+      "moduleFamilyId": "music_v1",
+      "moduleIdentity": "SP-AUD-207-MUSIC",
+      "moduleIdentityNumber": 207,
+      "contentType": "audio",
+      "version": "1.0.0",
+      "minAppVersion": "8.0.0",
+
+      "presentation": {
+        "category": "Music",
+        "purpose": "Songs, Soundtracks and Music",
+        "recommended": true,
+        "language": "Multilingual",
+        "languages": [
+          "zh",
+          "en",
+          "ja",
+          "ko",
+          "fr",
+          "es"
+        ],
+        "genres": [
+          "Soundtracks",
+          "Donghua OST",
+          "Chinese Music",
+          "Anime Music",
+          "Pop",
+          "Instrumental",
+          "Electronic"
+        ]
+      }
+    },
+
+    {
+      "moduleId": "artwork-v1",
+      "moduleFamilyId": "artwork_v1",
+      "moduleIdentity": "SP-IMG-208-ARTWORK",
+      "moduleIdentityNumber": 208,
+      "contentType": "image",
+      "version": "1.0.0",
+      "minAppVersion": "8.0.0",
+
+      "presentation": {
+        "category": "Artwork",
+        "purpose": "Posters, Covers and Promotional Artwork",
+        "recommended": true,
+        "language": "Multilingual",
+        "imageTypes": [
+          "poster",
+          "backdrop",
+          "cover",
+          "thumbnail",
+          "character",
+          "background"
+        ]
+      }
+    },
+
+    {
+      "moduleId": "soundtracks-v1",
+      "moduleFamilyId": "soundtracks_v1",
+      "moduleIdentity": "SP-AUD-209-SOUNDTRACKS",
+      "moduleIdentityNumber": 209,
+      "contentType": "audio",
+      "version": "1.0.0",
+      "minAppVersion": "8.0.0",
+
+      "presentation": {
+        "category": "Soundtracks",
+        "purpose": "Movie, Series and Donghua Soundtracks",
+        "recommended": false,
+        "language": "Multilingual",
+        "genres": [
+          "Donghua OST",
+          "Movie OST",
+          "Drama OST",
+          "Fantasy OST",
+          "Sci-Fi OST",
+          "Instrumental"
+        ]
       }
     }
-  }
 
-  // 5. Fallback: Generic iframe URL for WebView playback
-  const iframeMatch = html.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-  if (iframeMatch) {
-    const embedUrl = iframeMatch[1];
-    return {
-      url: embedUrl.startsWith('//') ? `https:${embedUrl}` : embedUrl,
-      type: 'embed'
-    };
-  }
+  ],
 
-  throw new Error('DonghuaStream page has no direct MP4/HLS or extractable embed source.');
+  "categories": [
+
+    {
+      "id": "donghua",
+      "name": "Donghua",
+      "description": "Chinese animation and donghua."
+    },
+
+    {
+      "id": "chinese-movies",
+      "name": "Chinese Movies",
+      "description": "Chinese-language movies and cinema."
+    },
+
+    {
+      "id": "chinese-series",
+      "name": "Chinese Series",
+      "description": "Chinese drama and television series."
+    },
+
+    {
+      "id": "fantasy",
+      "name": "Fantasy",
+      "description": "Fantasy movies and series from around the world."
+    },
+
+    {
+      "id": "scifi",
+      "name": "Sci-Fi",
+      "description": "Science-fiction movies and series."
+    },
+
+    {
+      "id": "world-movies",
+      "name": "World Movies",
+      "description": "International movies and television."
+    },
+
+    {
+      "id": "music",
+      "name": "Music",
+      "description": "Songs, music and soundtracks."
+    },
+
+    {
+      "id": "soundtracks",
+      "name": "Soundtracks",
+      "description": "Movie, drama and donghua soundtracks."
+    },
+
+    {
+      "id": "artwork",
+      "name": "Artwork",
+      "description": "Posters, covers, thumbnails and artwork."
+    },
+
+    {
+      "id": "action",
+      "name": "Action"
+    },
+
+    {
+      "id": "adventure",
+      "name": "Adventure"
+    },
+
+    {
+      "id": "romance",
+      "name": "Romance"
+    },
+
+    {
+      "id": "martial-arts",
+      "name": "Martial Arts"
+    },
+
+    {
+      "id": "cultivation",
+      "name": "Cultivation"
+    },
+
+    {
+      "id": "wuxia",
+      "name": "Wuxia"
+    },
+
+    {
+      "id": "xianxia",
+      "name": "Xianxia"
+    },
+
+    {
+      "id": "historical",
+      "name": "Historical"
+    },
+
+    {
+      "id": "mystery",
+      "name": "Mystery"
+    },
+
+    {
+      "id": "thriller",
+      "name": "Thriller"
+    },
+
+    {
+      "id": "horror",
+      "name": "Horror"
+    },
+
+    {
+      "id": "sub",
+      "name": "Subtitles"
+    },
+
+    {
+      "id": "dub",
+      "name": "Dubbed"
+    }
+
+  ],
+
+  "features": {
+    "search": true,
+    "details": true,
+    "episodes": true,
+    "movies": true,
+    "series": true,
+    "music": true,
+    "images": true,
+    "posters": true,
+    "backdrops": true,
+    "subtitles": true,
+    "multiLanguage": true,
+    "genres": true
+  }
 }
