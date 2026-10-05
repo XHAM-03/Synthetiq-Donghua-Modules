@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "repositoryId": "francis-donghua-modules",
+  "name": "Francis Donghua Modules",
+  "enabled": true,
+  "modules": [
+    {
+      "moduleId": "donghua-stream",
+      "moduleFamilyId": "donghua-stream",
+      "contentType": "video",
+      "version": "1.0.0",
+      "minAppVersion": "8.0.0",
+      "sourceUrl": "https://donghuastream.org/",
+      "presentation": {
+        "category": "Donghua",
+        "purpose": "Donghua, Sci-Fi and Fantasy",
+        "recommended": true,
+        "language": "English",
+        "languages": [
+          "sub",
+          "dub"
+        ],
+        "genres": [
+          "Donghua",
+          "Sci-Fi",
+          "Fantasy"
+        ]
+      }
+    }
+  ],
+  "categories": [
+    {
+      "id": "donghua",
+      "name": "Donghua",
+      "sourceUrl": "https://donghuastream.org/anime/"
+    },
+    {
+      "id": "scifi",
+      "name": "Sci-Fi",
+      "sourceUrl": "https://donghuastream.org/anime/"
+    },
+    {
+      "id": "fantasy",
+      "name": "Fantasy",
+      "sourceUrl": "https://donghuastream.org/anime/"
+    },
+    {
+      "id": "sub",
+      "name": "English Sub",
+      "sourceUrl": "https://donghuastream.org/anime/"
+    },
+    {
+      "id": "dub",
+      "name": "English Dub",
+      "sourceUrl": "https://donghuastream.org/anime/"
+    }
+  ]
+}
